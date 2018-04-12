@@ -1,8 +1,10 @@
--- High Performance Computing Linpack Benchmark for CUDA
-    hpl-cuda - 0.001 - 2010
+-- High Performance Computing Linpack Benchmark for HPL
+    hpl-ROCm - 0.001 - 2017
 
     David Martin (cuda@avidday.net)
     (C) Copyright 2010-2011 All Rights Reserved
+    For HIP Port 
+    (C). AMD 2018 All Rights Reserved  
 
 See the accompanying COPYING file for full details of the
 license and copyright information of the code contained in
@@ -10,13 +12,13 @@ this distribution.
 
 This distribution contains a simple acceleration scheme for
 the standard HPL-2.0 benchmark with a double precision capable
-NVIDIA GPU and the CUBLAS library.
+AMD GPU and the rocBLAS library.
 
-The code has been known to build on Ubuntu 8.04LTS or later and Redhat 5
-and derivatives, using mpich2 and GotoBLAS, with CUDA 2.2 or later.
+The code has been known to build on Ubuntu 16.04 LTS or later and Redhat 7.4
+and derivatives, using mpich2 and GotoBLAS, with ROCm. 1.7.1 or later.
 
 The supplied Make.CUDA file relies on a number of environment variables
-being set to correctly locate host BLAS and MPI, and CUBLAS libraries
+being set to correctly locate host BLAS and MPI, and rocBLAS libraries
 and include files. Example values for the abovementioned mpich2 and gotoBLAS
 combinations might be:
 
@@ -37,6 +39,7 @@ Correct runtime path and link load settings are the responsibility
 of the user.
 
 ROCm Support:
+
 The ROCm port requires the ROCm software stack and the libopenblas-dev
 blas implementation. The libopenblas-dev package can be installed on
 Ubuntu with this command:
