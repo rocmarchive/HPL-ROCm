@@ -205,7 +205,10 @@ void HPL_pdupdateTT
             gpu_upload(jb, jb, &(plan->gL1), L1ptr, jb);
 
 #ifdef HPL_GPU_ROCM
-            /* Need hipblas implementation of Dtrsm */
+            const double temp = HPL_rone;
+            hipblasDtrsm(blasHandle, HIPBLAS_SIDE_LEFT, HIPBLAS_FILL_MODE_UPPER, HIPBLAS_OP_T,
+                         HIPBLAS_DIAG_UNIT, jb, nn, &temp, plan->gL1.ptr, plan->gL1.lda,
+                         plan->gA.ptr, plan->gA.lda);
 #else
             cublasDtrsm('L','U','T','U', jb, nn, HPL_rone, 
                     plan->gL1.ptr, plan->gL1.lda, plan->gA.ptr, plan->gA.lda );

@@ -79,7 +79,7 @@ ARCH         = ROCm
 # - HPL Directory Structure / HPL library ------------------------------
 # ----------------------------------------------------------------------
 #
-TOPdir       = $(HOME)/code/hpl-cuda
+TOPdir       = $(HOME)/code/HPL-ROCm
 INCdir       = $(TOPdir)/include
 ROCMINCdir   = /opt/rocm/include
 HIPINCdir    = /opt/rocm/hip/include/hip
