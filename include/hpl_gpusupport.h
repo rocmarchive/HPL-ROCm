@@ -58,10 +58,19 @@
 #ifndef __GPU_SUPPORT_H__
 #define __GPU_SUPPORT_H__
 
+#ifdef HPL_GPU_ROCM
+#include <hipblas.h>
+#endif
+
 #define gpuQ( condition ) {if( (condition) != 0 ) { HPL_fprintf( stderr, "\n FAILURE %d in %s, line %d\n", condition, __FILE__, __LINE__ );exit( 1 );}}
 #define gpuPass (0)
 #define gpuFail (1)
 #define gpuWarn (-1)
+
+#ifdef HPL_GPU_ROCM
+/* Global blas handle */
+hipblasHandle_t blasHandle;
+#endif
 
 struct gpuArray
 {

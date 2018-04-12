@@ -6,7 +6,7 @@
  *    (C) Copyright 2010-2011 All Rights Reserved
  *
  *    portions of this code written by
-
+ *
  *    Antoine P. Petitet
  *    University of Tennessee, Knoxville
  *    Innovative Computing Laboratory
@@ -37,8 +37,13 @@
  * for Advanced Studies.
  */
 #include <cuda.h>
+#ifdef HPL_GPU_ROCM
+#include <hip/hip_runtime.h>
+#include <hipblas.h>
+#else
 #include <cuda_runtime.h>
 #include <cublas.h>
+#endif
 
 #include "hpl.h"
 #include "hpl_gpusupport.h"
@@ -60,7 +65,11 @@ void gpu_release( )
 {
     if( pool != NULL )
     {
+#ifdef HPL_GPU_ROCM
+        gpuQ( hipFree( pool ) );
+#else
         gpuQ( cudaFree( pool ) );
+#endif
         pool = NULL;
     }
     reserved = allocated = 0;
@@ -76,7 +85,11 @@ int gpu_init( char warmup )
 
     gpu_release( );
     
+#ifdef HPL_GPU_ROCM
+    if( hipblasCreate(&blasHandle) != HIPBLAS_STATUS_SUCCESS )
+#else
     if( cublasInit() != CUBLAS_STATUS_SUCCESS )
+#endif
     {
         initialised = gpuFail;
         return initialised;
@@ -84,9 +97,15 @@ int gpu_init( char warmup )
     
 #ifdef HPL_CUDA_DIAGNOSTICS
     int idevice;
+#ifdef HPL_GPU_ROCM
+    struct hipDeviceProp_t prop;
+    gpuQ( hipGetDevice( &idevice ) );
+    gpuQ( hipGetDeviceProperties( &prop, idevice ) );
+#else
     struct cudaDeviceProp prop;
     gpuQ( cudaGetDevice( &idevice ) );
     gpuQ( cudaGetDeviceProperties( &prop, idevice ) );
+#endif
     HPL_fprintf(stderr, "HPL_gpusupport.c: using device %s, %.0f MHz clock, %.0f MB memory.\n", prop.name, prop.clockRate/1000.f, prop.totalGlobalMem/1048576.f);
 #endif
 
@@ -94,13 +113,25 @@ int gpu_init( char warmup )
      *  pre-allocate as much GPU memory as possible
      */
     unsigned int total;
+#ifdef HPL_GPU_ROCM
+    size_t res, tot;
+    gpuQ( hipMemGetInfo( &res, &tot ) );
+    reserved = (unsigned int) res;
+    total = (unsigned int) tot;
+    while( hipMalloc( (void**)&pool, reserved ) != hipSuccess )
+#else
     gpuQ( cuMemGetInfo( &reserved, &total ) );
     while( cudaMalloc( (void**)&pool, reserved ) != cudaSuccess )
+#endif
     {
         reserved -= MB;
         if( reserved < MB )
         {
+#ifdef HPL_GPU_ROCM
+            gpuQ( hipblasDestroy(blasHandle) );
+#else
             gpuQ( cublasShutdown() );
+#endif
             initialised = gpuFail;
             return initialised;
         }
@@ -114,16 +145,26 @@ int gpu_init( char warmup )
         int m = 128, n = 1;
         struct gpuArray junk;
         gpuQ( gpu_malloc2D(m,n,&junk) );
+#ifdef HPL_GPU_ROCM
+        const double two = 2.0;
+        hipblasDscal( blasHandle, m, &two, junk.ptr, 1 );
+        gpuQ( hipDeviceSynchronize() );
+#else
         cublasDscal( m, 2., junk.ptr, 1 );
         gpuQ( cublasGetError() );
         gpuQ( cudaThreadSynchronize() );
+#endif
         gpu_malloc_reset();
     }
 
     /*
      *  reset the error states
      */
+#ifdef HPL_GPU_ROCM
+    hipGetLastError();
+#else
     cudaGetLastError();
+#endif
 
     initialised = gpuPass;
     return initialised;
@@ -189,25 +230,43 @@ int gpu_malloc2D( int m, int n, struct gpuArray *p )
 void gpu_upload( const int m, const int n, struct gpuArray *dst, const double *src, const int srclda)
 {       
     if( m > 0 && n > 0 )
+#ifdef HPL_GPU_ROCM
+        gpuQ( hipMemcpy2D( dst->ptr, dst->lda*sizeof(double),
+                            src, srclda*sizeof(double),
+                            m*sizeof(double), n, hipMemcpyHostToDevice ) );
+#else
         gpuQ( cudaMemcpy2D( dst->ptr, dst->lda*sizeof(double), 
                             src, srclda*sizeof(double),
                             m*sizeof(double), n, cudaMemcpyHostToDevice ) );
+#endif
 }       
 
 void gpu_download( const int m, const int n, double *dst, const int dstlda, struct gpuArray *src )
 {       
     if( m > 0 && n > 0 )
+#ifdef HPL_GPU_ROCM
+        gpuQ( hipMemcpy2D( dst, dstlda*sizeof(double),
+                            src->ptr, src->lda*sizeof(double),
+                            m*sizeof(double), n, hipMemcpyDeviceToHost ) );
+#else
         gpuQ( cudaMemcpy2D( dst, dstlda*sizeof(double), 
                             src->ptr, src->lda*sizeof(double), 
                             m*sizeof(double), n, cudaMemcpyDeviceToHost ) );
+#endif
 }       
 
 void gpu_copy( const int m, const int n, struct gpuArray *dst, struct gpuArray *src )
 {       
     if( m > 0 && n > 0 )
+#ifdef HPL_GPU_ROCM
+        gpuQ( hipMemcpy2D( dst->ptr, dst->lda*sizeof(double),
+                            src->ptr, src->lda*sizeof(double),
+                            m*sizeof(double), n, hipMemcpyDeviceToDevice ) );
+#else
         gpuQ( cudaMemcpy2D( dst->ptr, dst->lda*sizeof(double), 
                             src->ptr, src->lda*sizeof(double), 
                             m*sizeof(double), n, cudaMemcpyDeviceToDevice ) );
+#endif
 }       
 
 struct gpuUpdatePlan * gpuUpdatePlanCreate(int mp, int nn, int jb)

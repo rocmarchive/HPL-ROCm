@@ -73,7 +73,11 @@
  * ---------------------------------------------------------------------
  */
 #include "hpl_misc.h"
+/* Extern "C" qualifier required to compile cblas with hcc. */
+extern "C"
+{
 #include "hpl_blas.h"
+}
 #include "hpl_auxil.h"
 #include "hpl_gesv.h"
 

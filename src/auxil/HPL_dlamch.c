@@ -746,8 +746,7 @@ static void HPL_dlamc5( BETA, P, EMIN, IEEE, EMAX, RMAX )
  * .. Local Variables ..
  */
    double                     oldy=HPL_rzero, recbas, y, z;
-   int                        exbits=1, expsum, i, lexp=1, nbits, try,
-                              uexp;
+   int                        exbits=1, expsum, i, lexp=1, nbits, try_rename, uexp;
 /* ..
  * .. Executable Statements ..
  */
@@ -758,10 +757,10 @@ static void HPL_dlamc5( BETA, P, EMIN, IEEE, EMAX, RMAX )
  * required number RMAX).
  */
 l_10:
-   try = (int)( (unsigned int)(lexp) << 1 );
-   if( try <= ( -EMIN ) ) { lexp = try; exbits++; goto l_10; }
+   try_rename = (int)( (unsigned int)(lexp) << 1 );
+   if( try_rename <= ( -EMIN ) ) { lexp = try_rename; exbits++; goto l_10; }
 
-   if( lexp == -EMIN ) { uexp = lexp; } else { uexp = try; exbits++; }
+   if( lexp == -EMIN ) { uexp = lexp; } else { uexp = try_rename; exbits++; }
 /*
  * Now -lexp is less than or equal to EMIN, and -uexp is greater than or
  * equal to EMIN. exbits is the number of bits needed to store the expo-

@@ -53,7 +53,10 @@
 /*
  * Include files
  */
+#ifdef HPL_GPU_ROCM
+#else
 #include <cublas.h>
+#endif
 #include "hpl.h"
 #include "hpl_gpusupport.h"
 
@@ -201,9 +204,13 @@ void HPL_pdupdateTT
             gpu_upload(jb, nn, &(plan->gA), Aptr, lda);
             gpu_upload(jb, jb, &(plan->gL1), L1ptr, jb);
 
+#ifdef HPL_GPU_ROCM
+            /* Need hipblas implementation of Dtrsm */
+#else
             cublasDtrsm('L','U','T','U', jb, nn, HPL_rone, 
                     plan->gL1.ptr, plan->gL1.lda, plan->gA.ptr, plan->gA.lda );
             gpuQ( cublasGetError() );
+#endif
 
             gpu_download(jb, nn, Aptr, lda, &(plan->gA));
             gpu_upload(mp, jb, &(plan->gL2), L2ptr, ldl2);
@@ -222,11 +229,20 @@ void HPL_pdupdateTT
 
                 gpu_upload(mp, N1, &(plan->gA2), Mptr(Aptr, jb, N0, lda), lda);
 
+#ifdef HPL_GPU_ROCM
+                const double temp = HPL_rone;
+                const double minus_temp = -HPL_rone;
+                hipblasDgemm(blasHandle, HIPBLAS_OP_N, HIPBLAS_OP_N, mp, N1, jb,
+                         &minus_temp, plan->gL2.ptr, plan->gL2.lda,
+                         Mptr( plan->gA.ptr, 0, N0, plan->gA.lda ), plan->gA.lda,
+                         &temp, plan->gA2.ptr, plan->gA2.lda );
+#else
                 cublasDgemm('N','N', mp, N1, jb, 
                         -HPL_rone, plan->gL2.ptr, plan->gL2.lda, 
                          Mptr( plan->gA.ptr, 0, N0, plan->gA.lda ), plan->gA.lda, 
                          HPL_rone, plan->gA2.ptr, plan->gA2.lda );
                 gpuQ( cublasGetError() );
+#endif
 
                 HPL_dgemm( HplColumnMajor, HplNoTrans, HplNoTrans, mp, N2, jb,
                         -HPL_rone, L2ptr, ldl2, Mptr( Aptr, 0, N0+N1, lda ), lda,

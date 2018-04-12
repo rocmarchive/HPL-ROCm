@@ -1,0 +1,12 @@
+#!/bin/bash
+export MPICH2_INSTALL_PATH="/usr/lib/mpich/"
+export MPICH2_INCLUDES="-I/usr/lib/mpich/include"
+export MPICH2_LIBRARIES="-L/usr/lib/mpich/lib -lmpich -lmpi"
+export BLAS_INCLUDES="-I/usr/include/openblas"
+export BLAS_LIBRARIES="-L/usr/lib/openblas-base -lblas"
+export ROCBLAS_INCLUDES="-I/opt/rocm/rocblas/include"
+export ROCBLAS_LIBRARIES="-L/opt/rocm/rocblas/lib -lrocblas"
+export HIPBLAS_INCLUDES="-I/opt/rocm/hipblas/include"
+export HIPBLAS_LIBRARIES="-L/opt/rocm/hipblas/lib -lhipblas"
+export HIP_INCLUDES="-I/opt/rocm/hip/include"
+export HIP_LIBRARIES="-L/opt/rocm/hip/lib -lhip_hcc"
